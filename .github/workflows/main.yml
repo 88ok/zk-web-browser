@@ -6,30 +6,26 @@ on:
       - main
 
 permissions:
-  contents: write  # 必须赋予写权限，否则无法创建 Release 和上传附件
+  contents: write
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. 拉取代码
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 2. 设置 JDK 环境（这里以 JDK 17 为例，可根据你的项目修改）
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: 'maven' # 开启 Maven 缓存，加速后续构建
+        cache: 'maven'
 
-    # 3. 使用 Maven 编译并打包
     - name: Build with Maven
-      run: mvn clean package -DskipTests # 默认跳过测试，如需跑测试请去掉 -DskipTests
+      run: mvn clean package -DskipTests
 
-    # 4. 获取项目版本号和 Artifact ID（用于动态命名 Release 和寻找 jar 包）
     - name: Extract Maven Project Version
       id: project_info
       run: |
@@ -38,16 +34,14 @@ jobs:
         echo "version=$VERSION" >> $GITHUB_OUTPUT
         echo "artifact_id=$ARTIFACT_ID" >> $GITHUB_OUTPUT
 
-    # 5. 自动创建 GitHub Release 并上传 JAR 包
     - name: Create Release and Upload Asset
       uses: softprops/action-gh-release@v2
       with:
-        # 使用 Maven 中的版本号作为 Tag 和 Release 名称（例如 v1.0.0）
         tag_name: v${{ steps.project_info.outputs.version }}
         name: Release v${{ steps.project_info.outputs.version }}
         draft: false
         prerelease: false
-        # 寻找 target 目录下生成的 jar 包并上传
-        files: target/${{ steps.project_info.outputs.artifact_id }}-${{ steps.project_info.outputs.version }}.jar
+        # 【修改点】这里加上了 -jar-with-dependencies 后缀，确保上传的是全依赖包
+        files: target/${{ steps.project_info.outputs.artifact_id }}-${{ steps.project_info.outputs.version }}-jar-with-dependencies.jar
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GitHub 自动生成的 Token，无需手动配置
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
