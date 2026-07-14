@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZK Web Browser</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="app">
+
+    <!-- ============ Header ============ -->
+    <header class="app-header">
+        <div class="header-left">
+            <svg class="logo-icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12h8M12 8v8"/>
+            </svg>
+            <span class="header-title">ZK Web Browser</span>
+        </div>
+        <div class="header-right">
+            <span id="connection-status" class="status-badge disconnected">未连接</span>
+        </div>
+    </header>
+
+    <!-- ============ Main Body ============ -->
+    <div class="app-body">
+
+        <!-- ===== Left: Server List ===== -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>ZK 服务器</h3>
+                <button class="btn-icon" id="btn-add-server" title="添加服务器">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+            </div>
+
+            <!-- Add Server Form -->
+            <div class="add-server-form" id="add-server-form" style="display:none;">
+                <input type="text" id="server-name" placeholder="名称 (如: 生产环境)" maxlength="30">
+                <input type="text" id="server-address" placeholder="地址 (如: 127.0.0.1:2181)" maxlength="200">
+                <div class="form-actions">
+                    <button class="btn btn-primary btn-sm" id="btn-save-server">添加</button>
+                    <button class="btn btn-secondary btn-sm" id="btn-cancel-server">取消</button>
+                </div>
+            </div>
+
+            <ul class="server-list" id="server-list"></ul>
+
+            <div class="sidebar-footer">
+                <span class="hint">服务器列表保存在浏览器本地</span>
+            </div>
+        </aside>
+
+        <!-- Resize Handle -->
+        <div class="resize-handle" id="resize-handle"></div>
+
+        <!-- ===== Center: Tree View ===== -->
+        <section class="tree-panel">
+            <div class="tree-header">
+                <div class="tree-toolbar">
+                    <button class="btn btn-secondary btn-sm" id="btn-refresh" disabled>
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                        刷新
+                    </button>
+                    <span class="tree-path" id="tree-path">请先连接 ZK 服务器</span>
+                </div>
+            </div>
+            <div class="tree-container" id="tree-container">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M8 12h8M12 8v8"/>
+                    </svg>
+                    <p>从左侧选择或添加 ZK 服务器</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== Right: Node Details ===== -->
+        <section class="detail-panel" id="detail-panel">
+            <div class="detail-header">
+                <h3>节点详情</h3>
+            </div>
+            <div class="detail-content" id="detail-content">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/>
+                    </svg>
+                    <p>选择一个节点查看详情</p>
+                </div>
+            </div>
+        </section>
+
+    </div>
+</div>
+
+<!-- ============ Create Node Modal ============ -->
+<div class="modal-overlay" id="create-modal" style="display:none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>创建子节点</h3>
+            <button class="btn-icon" id="btn-close-modal">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>父节点</label>
+                <input type="text" id="create-parent" readonly>
+            </div>
+            <div class="form-group">
+                <label>节点名称</label>
+                <input type="text" id="create-name" placeholder="如: config" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>数据 (可选)</label>
+                <textarea id="create-data" rows="5" placeholder="节点数据内容"></textarea>
+            </div>
+            <div class="form-group">
+                <label>节点类型</label>
+                <select id="create-mode">
+                    <option value="PERSISTENT">持久节点 (PERSISTENT)</option>
+                    <option value="EPHEMERAL">临时节点 (EPHEMERAL)</option>
+                    <option value="PERSISTENT_SEQUENTIAL">持久顺序节点 (PERSISTENT_SEQUENTIAL)</option>
+                    <option value="EPHEMERAL_SEQUENTIAL">临时顺序节点 (EPHEMERAL_SEQUENTIAL)</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-cancel-create">取消</button>
+            <button class="btn btn-primary" id="btn-confirm-create">创建</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ Toast ============ -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>

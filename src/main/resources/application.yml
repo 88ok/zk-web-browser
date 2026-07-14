@@ -1,0 +1,15 @@
+server:
+  port: 9268
+
+spring:
+  application:
+    name: zk-web
+  servlet:
+    multipart:
+      max-file-size: 10MB
+
+logging:
+  level:
+    com.zkbrowser: INFO
+    org.apache.zookeeper: WARN
+    org.apache.curator: WARN
